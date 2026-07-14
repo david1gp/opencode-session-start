@@ -19,9 +19,9 @@ For example, Rift Command delegates its long-running dev server to a user servic
 
 ## Lifecycle and session behavior
 
-OpenCode reads the local directory URL as a package, resolves this package's `main` entry (`./src/index.ts`), and asks
-Bun to import it dynamically. Path plugins must export an `id`, as this plugin does. With tuple configuration, OpenCode
-passes the tuple's object to the plugin's `server(input, options)` function.
+OpenCode resolves this npm package's `main` entry (`./src/index.ts`) and asks Bun to import it dynamically. This plugin
+exports an `id`. With tuple configuration, OpenCode passes the tuple's object to the plugin's
+`server(input, options)` function.
 
 Plugin initialization happens once per OpenCode directory instance. This plugin's session and startup tracking uses
 in-memory `Set` and `Map` state, so it is local to that instance and process and lasts only until the instance is
@@ -51,13 +51,13 @@ for the same session.
 
 ## Install
 
-The commands below add this checkout's absolute local URL as a string entry while preserving other entries in the
-`plugin` array.
+The commands below add this package's npm identifier as a string entry while preserving other entries in the `plugin`
+array.
 
 Install globally:
 
 ```bash
-opencode plugin 'file:///home/david/Coding/adaptive/opencode-session-start' --global
+opencode plugin opencode-session-start --global
 ```
 
 This writes the global configuration at `~/.config/opencode/opencode.json` or
@@ -66,18 +66,17 @@ This writes the global configuration at `~/.config/opencode/opencode.json` or
 Install for the project from the target project's directory:
 
 ```bash
-opencode plugin 'file:///home/david/Coding/adaptive/opencode-session-start'
+opencode plugin opencode-session-start
 ```
 
 This writes configuration under `.opencode` in the project worktree. It reuses an existing `opencode.json` or
 `opencode.jsonc` there, preferring JSON if both exist, and otherwise creates `opencode.json`.
 
-The plugin has no external runtime dependency at present, and OpenCode does not install dependencies for a local URL.
-No build or `bun install` step is required merely to load this checkout.
+No build or `bun install` step is required to install or load this package.
 
 ## Manual configuration
 
-Add the URL to the appropriate global or project `plugin` array. OpenCode also reads project configuration from a
+Add the package identifier to the appropriate global or project `plugin` array. OpenCode also reads project configuration from a
 root-level `opencode.json` or `opencode.jsonc`. Keep every existing plugin entry:
 
 ```jsonc
@@ -85,7 +84,7 @@ root-level `opencode.json` or `opencode.jsonc`. Keep every existing plugin entry
   "$schema": "https://opencode.ai/config.json",
   "plugin": [
     // Existing plugin entries remain here.
-    "file:///home/david/Coding/adaptive/opencode-session-start",
+    "opencode-session-start",
   ],
 }
 ```
@@ -98,7 +97,7 @@ The CLI also adds a string entry. To set options, replace only this plugin's str
   "plugin": [
     // Existing plugin entries remain here.
     [
-      "file:///home/david/Coding/adaptive/opencode-session-start",
+      "opencode-session-start",
       {
         "enabled": true,
         "verbosity": "normal",
@@ -146,15 +145,13 @@ a new tab or session is not sufficient.
 
 ## Update safely
 
-The local URL points directly to this checkout, so update the checkout in place rather than adding another plugin
-entry. If dependencies or the lockfile changed, run `bun install`; otherwise it is only needed for development checks.
-Validate the effective configuration, then fully restart the OpenCode backend.
+Update the package version in the relevant plugin entry without adding another entry. Validate the effective
+configuration, then fully restart the OpenCode backend.
 
 ## Remove safely
 
 There is no remove command in the inspected OpenCode version. Remove this plugin's string or tuple from the relevant
 `plugin` array without removing other entries, validate the configuration, and fully restart the OpenCode backend.
-Only then delete the checkout if it is no longer needed.
 
 ## Development
 
@@ -167,5 +164,5 @@ bun run check
 bun test
 ```
 
-This package intentionally exposes its TypeScript source for local `file://` loading, so development does not require a
-build step. After source changes, fully restart the OpenCode backend before testing the plugin.
+This package intentionally exposes its TypeScript source, so development does not require a build step. After source
+changes, fully restart the OpenCode backend before testing the plugin.
