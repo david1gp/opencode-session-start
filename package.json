@@ -1,0 +1,36 @@
+{
+  "name": "opencode-session-start",
+  "version": "0.1.0",
+  "description": "OpenCode plugin that runs a project's dev:start script once per active session.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "check": "biome check src test package.json tsconfig.json biome.json",
+    "format": "biome format --write src test package.json tsconfig.json biome.json",
+    "test": "bun test",
+    "typecheck": "tsgo --noEmit"
+  },
+  "peerDependencies": {
+    "@opencode-ai/plugin": ">=1.4.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.2",
+    "@opencode-ai/plugin": "1.4.3",
+    "@types/bun": "latest",
+    "typescript": "^6.0.3"
+  },
+  "keywords": [
+    "opencode",
+    "plugin",
+    "dev-server",
+    "session"
+  ]
+}
