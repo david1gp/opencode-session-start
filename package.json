@@ -3,6 +3,10 @@
   "version": "0.2.0",
   "description": "OpenCode plugin that runs a project's dev:start script once per active session.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/david1gp/opencode-session-start.git"
+  },
   "private": false,
   "type": "module",
   "main": "./src/index.ts",
