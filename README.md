@@ -101,7 +101,7 @@ The CLI also adds a string entry. To set options, replace only this plugin's str
       {
         "enabled": true,
         "verbosity": "normal",
-        "injectOutput": false,
+        "injectOutputToAgentSession": false,
       },
     ],
   ],
@@ -113,8 +113,23 @@ Options:
 - `enabled`: enables startup behavior. Default: `true`.
 - `verbosity`: `silent` writes no OpenCode logs, `normal` logs completion and errors, and `debug` also logs skipped
   projects and command startup. Allowed values: `silent`, `normal`, or `debug`. Default: `normal`.
-- `injectOutput`: appends a synthetic text part containing the exit code and captured stdout/stderr to the first user
+- `injectOutputToAgentSession`: appends a synthetic text part containing the exit code and captured stdout/stderr to the first user
   message that consumes startup output. It does not create another message or model turn. Default: `false`.
+- `script`: the `package.json` script that is looked up and run. Default: `dev:start`.
+- `runner`: the package runner used to run the script, as in `<runner> run <script>`. Default: `bun`.
+- `command`: full argv override, for example `["make", "dev-start"]`. When set, no `package.json` lookup happens and
+  `script` and `runner` are ignored.
+- `toastOutputInTui`: shows a user-visible toast with the exit code and captured output. `never` disables toasts,
+  `error` shows only failures, and `always` also shows a success toast. Default: `error`.
+
+Toasts are the only user-visible channel that does not pass through the model. `injectOutputToAgentSession` adds the
+output to the model's context as a synthetic message part, and `verbosity` writes to the OpenCode log, which is visible
+only via the log file. Toasts and injection are independent and can be combined.
+
+Toasts reach the terminal TUI only. The plugin calls `POST /tui/show-toast`, which publishes a `tui.toast.show` event on
+the shared event stream, but only the terminal TUI subscribes to that event. The web UI ignores it, and a headless
+backend has no consumer at all. The TUI also drops the toast when its current workspace differs from the one the event
+was published for. Enable `injectOutputToAgentSession` when startup output must stay visible in the web UI.
 
 The first message associated with startup waits for `dev:start` whether output injection is enabled or disabled. Output
 is captured in memory, so launcher commands should keep stdout and stderr concise.

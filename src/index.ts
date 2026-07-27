@@ -3,7 +3,15 @@ import type { Plugin, PluginModule, PluginOptions } from "@opencode-ai/plugin"
 export type SessionStartOptions = {
   enabled?: boolean
   verbosity?: "silent" | "normal" | "debug"
-  injectOutput?: boolean
+  injectOutputToAgentSession?: boolean
+  /** package.json script to run. Default: "dev:start". */
+  script?: string
+  /** Package runner used to run the script. Default: "bun". */
+  runner?: string
+  /** Full command override. When set, no package.json script lookup happens. */
+  command?: string[]
+  /** Show a user-visible TUI toast. Default: "error". */
+  toastOutputInTui?: "never" | "error" | "always"
 }
 
 const server: Plugin = async ({ client, directory }, rawOptions: PluginOptions = {}) => {
@@ -12,7 +20,18 @@ const server: Plugin = async ({ client, directory }, rawOptions: PluginOptions =
   const verbosity = ["silent", "normal", "debug"].includes(options.verbosity ?? "")
     ? (options.verbosity ?? "normal")
     : "normal"
-  const injectOutput = options.injectOutput === true
+  const injectOutputToAgentSession = options.injectOutputToAgentSession === true
+  const script = typeof options.script === "string" && options.script ? options.script : "dev:start"
+  const runner = typeof options.runner === "string" && options.runner ? options.runner : "bun"
+  const commandOverride =
+    Array.isArray(options.command) && options.command.length > 0
+      ? options.command.filter((entry): entry is string => typeof entry === "string")
+      : undefined
+  const command = commandOverride ?? [runner, "run", script]
+  const label = command.join(" ")
+  const toastMode = ["never", "error", "always"].includes(options.toastOutputInTui ?? "")
+    ? (options.toastOutputInTui ?? "error")
+    : "error"
   const started = new Set<string>()
   const startupBySession = new Map<string, Promise<string | undefined>>()
 
@@ -28,22 +47,36 @@ const server: Plugin = async ({ client, directory }, rawOptions: PluginOptions =
     } catch {}
   }
 
+  const toast = (message: string, variant: "success" | "error", directory: string) => {
+    if (toastMode === "never" || (toastMode === "error" && variant !== "error")) return
+    try {
+      void client.tui
+        .showToast({
+          body: { title: "session-start", message, variant },
+          query: { directory },
+        })
+        .catch(() => {})
+    } catch {}
+  }
+
   const start = async (directory: string) => {
     try {
-      const packageFile = Bun.file(`${directory}/package.json`)
-      if (!(await packageFile.exists())) {
-        log("debug", `No package.json in ${directory}`, directory)
-        return
+      if (!commandOverride) {
+        const packageFile = Bun.file(`${directory}/package.json`)
+        if (!(await packageFile.exists())) {
+          log("debug", `No package.json in ${directory}`, directory)
+          return
+        }
+
+        const packageJson = (await packageFile.json()) as { scripts?: Record<string, unknown> }
+        if (typeof packageJson.scripts?.[script] !== "string") {
+          log("debug", `No ${script} script in ${directory}`, directory)
+          return
+        }
       }
 
-      const packageJson = (await packageFile.json()) as { scripts?: Record<string, unknown> }
-      if (typeof packageJson.scripts?.["dev:start"] !== "string") {
-        log("debug", `No dev:start script in ${directory}`, directory)
-        return
-      }
-
-      log("debug", `Running bun run dev:start in ${directory}`, directory)
-      const process = Bun.spawn(["bun", "run", "dev:start"], {
+      log("debug", `Running ${label} in ${directory}`, directory)
+      const process = Bun.spawn(command, {
         cwd: directory,
         stdout: "pipe",
         stderr: "pipe",
@@ -54,15 +87,21 @@ const server: Plugin = async ({ client, directory }, rawOptions: PluginOptions =
         new Response(process.stderr).text(),
       ])
       const output = [stdout.trim(), stderr.trim()].filter(Boolean).join("\n")
-      const summary = `bun run dev:start exited with code ${exitCode}`
+      const summary = `${label} exited with code ${exitCode}`
 
-      if (exitCode === 0) log("info", summary, directory)
-      else log("error", `${summary}${output ? `: ${output}` : ""}`, directory)
+      if (exitCode === 0) {
+        log("info", summary, directory)
+        toast(summary, "success", directory)
+      } else {
+        log("error", `${summary}${output ? `: ${output}` : ""}`, directory)
+        toast(`${summary}${output ? `\n${output}` : ""}`, "error", directory)
+      }
 
       return `[opencode-session-start] ${summary}${output ? `\n${output}` : ""}`
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
-      log("error", `Failed to run bun run dev:start: ${message}`, directory)
+      log("error", `Failed to run ${label}: ${message}`, directory)
+      toast(`Failed to run ${label}: ${message}`, "error", directory)
       return undefined
     }
   }
@@ -92,7 +131,7 @@ const server: Plugin = async ({ client, directory }, rawOptions: PluginOptions =
       const startupOutput = await startup
       if (startupBySession.get(sessionID) !== startup) return
       startupBySession.delete(sessionID)
-      if (!injectOutput || !startupOutput) return
+      if (!injectOutputToAgentSession || !startupOutput) return
       output.parts.push({
         id: `prt_${crypto.randomUUID()}`,
         sessionID,
