@@ -20,7 +20,7 @@
     "check": "biome check src test package.json tsconfig.json biome.json",
     "format": "biome format --write src test package.json tsconfig.json biome.json",
     "test": "bun test",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
     "@opencode-ai/plugin": ">=1.4.3"
@@ -29,7 +29,6 @@
     "@biomejs/biome": "^2.5.2",
     "@opencode-ai/plugin": "1.4.3",
     "@types/bun": "latest",
-    "@typescript/native-preview": "^7.0.0-dev.20260707.2",
     "typescript": "^6.0.3"
   },
   "keywords": [
