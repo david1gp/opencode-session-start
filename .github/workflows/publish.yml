@@ -28,10 +28,12 @@ jobs:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
 
-      # Use Bun for everything except publishing
+      # Use Bun for everything except publishing. This package ships TypeScript
+      # source, so there is no build step.
       - run: bun install
-      - run: bun run build
-      # - run: bun test
+      - run: bun run typecheck
+      - run: bun run check
+      - run: bun test
 
       # Ensure npm 11.5.1 or later is installed
       - name: Update npm
