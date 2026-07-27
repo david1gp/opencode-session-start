@@ -1,6 +1,6 @@
 {
   "name": "opencode-session-start",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "OpenCode plugin that runs a project's dev:start script once per active session.",
   "license": "MIT",
   "private": false,
