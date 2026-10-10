@@ -175,7 +175,7 @@ Install development dependencies and run the existing checks:
 ```bash
 bun install
 bun run typecheck
-bun run check
+bun run lint
 bun test
 ```
 

@@ -17,10 +17,10 @@
     "src"
   ],
   "scripts": {
-    "check": "biome check src test package.json tsconfig.json biome.json",
+    "lint": "biome check src test package.json tsconfig.json biome.json",
     "format": "biome format --write src test package.json tsconfig.json biome.json",
     "test": "bun test",
-    "typecheck": "bun --check"
+    "typecheck": "bun check"
   },
   "peerDependencies": {
     "@opencode-ai/plugin": ">=1.4.3"
