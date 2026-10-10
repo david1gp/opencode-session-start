@@ -32,7 +32,7 @@ jobs:
       # source, so there is no build step.
       - run: bun install
       - run: bun run typecheck
-      - run: bun run check
+      - run: bun run lint
       - run: bun test
 
       # Ensure npm 11.5.1 or later is installed
