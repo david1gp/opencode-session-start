@@ -27,5 +27,10 @@
     "enabled": true,
     "clientKind": "git",
     "useIgnoreFile": true
+  },
+  "markdown": {
+    "parser": {
+      "frontmatter": true
+    }
   }
 }
